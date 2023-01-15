@@ -33,16 +33,14 @@ if __name__ == '__main__':
     data = __prepare_data()
 
     rips = Rips()
-    pd = rips.fit_transform(data[1])
+    pd = rips.fit_transform(data[1])  # TODO: go over all indices
     # rips.plot(pd)
     # plt.show()
 
-    # pd = [np.nan_to_num(pd[0]), np.nan_to_num(pd[1])]
-    # pd[0][0, 1] = 10000
-    # vectors = pervect.PersistenceVectorizer(n_components=3).fit_transform(pd)
+    pd_components = pd[0]  # only use first dimension (i.e. components) to detect pattern classes (other dimensions add data noise for that downstream task)
 
     pd_filtered = []
-    for pd_d in pd:
+    for pd_d in pd_components:
         if pd_d.shape[0] != 0:
             pd_d[pd_d == np.Inf] = np.max(pd_d[pd_d != np.Inf]) * 10
             pd_filtered.append(pd_d)
