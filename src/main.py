@@ -27,24 +27,43 @@ def __prepare_data():
     return np.array(note_based_representation)
 
 
-if __name__ == '__main__':
-    choral = __get_bach_choral(0)
-    # __plot_pianoroll_for_range(1, 31)
-    data = __prepare_data()
-
+def __create_filtration(plot_pd=False):
     rips = Rips()
-    pd = rips.fit_transform(data[1])  # TODO: go over all indices
-    # rips.plot(pd)
-    # plt.show()
+    pd = rips.fit_transform(measure)
 
-    pd_components = pd[0]  # only use first dimension (i.e. components) to detect pattern classes (other dimensions add data noise for that downstream task)
+    if plot_pd:
+        rips.plot(pd)
+        plt.show()
 
+    return pd
+
+
+def __preprocess_pd_for_vectorization():
     pd_filtered = []
+
     for pd_d in pd_components:
         if pd_d.shape[0] != 0:
             pd_d[pd_d == np.Inf] = np.max(pd_d[pd_d != np.Inf]) * 10
             pd_filtered.append(pd_d)
 
-    vectors = pervect.PersistenceVectorizer(n_components=3).fit_transform(pd_filtered)
+    if len(pd_filtered) == 1:
+        pd_filtered = np.vstack((pd_filtered[0], pd_filtered[0]))
+        print('x')
 
-    print('x')
+    return pd_filtered
+
+
+if __name__ == '__main__':
+    choral = __get_bach_choral(0)
+    # __plot_pianoroll_for_range(1, 31)
+    measures = __prepare_data()
+
+    vectors = []
+
+    for measure in measures:
+        pd = __create_filtration()
+        pd_components = pd[0]  # only use first dimension (i.e. components) to detect pattern classes (other dimensions add data noise for that downstream task)
+        pd_filtered = __preprocess_pd_for_vectorization()
+        vectors.append(pervect.PersistenceVectorizer(n_components=2).fit_transform(pd_filtered))
+
+    print(vectors)
