@@ -46,14 +46,14 @@ def __create_filtration(plot_pd=False):
     return pd
 
 
-def __preprocess_pd_for_vectorization():
+def __preprocess_pd_for_vectorization(pd):
     """ Take care of infinity values and musical measures which only contain a single played note (since some vectorization algorithms fail with a single data point as input).
     :return: persistence diagram format which can be used as input for vectorization
     """
 
     pd_filtered = []
 
-    for pd_d in pd_components:
+    for pd_d in pd:
         if pd_d.shape[0] != 0:
             pd_d[pd_d == np.Inf] = np.max(pd_d[pd_d != np.Inf]) * 10
             pd_filtered.append(pd_d)
@@ -62,10 +62,11 @@ def __preprocess_pd_for_vectorization():
         pd_filtered = np.vstack((pd_filtered[0], pd_filtered[0]))
         print('x')
 
-    return pd_filtered
+    return pd_filtered[0]  # only return dim=0 (i.e. components)
 
 
-def __cluster_euclidean_vectors():
+
+def __cluster_euclidean_vectors(vectors):
     labels = {}
 
     kmeans = KMeans(n_clusters=6)
@@ -92,20 +93,42 @@ def __cluster_euclidean_vectors():
     mean_shift.fit(vectors)
     labels["mean_shift"] = mean_shift.labels_
 
+    return labels
+
+
+def __plot_vectorization_output(vectors):
+    colors = ['red', 'blue', 'green', 'orange', 'purple', 'yellow', 'cyan', 'lightgreen', 'darkred',
+              'pink', 'salmon', 'darkgrey', 'paleturquoise', 'cornflowerblue', 'fuchsia', 'midnightblue', 'olive', 'dodgerblue']
+
+    tsne = TSNE(perplexity=3).fit_transform(vectors)
+    cm = plt.cm.get_cmap(lut=len(tsne))
+
+    for i in range(len(tsne)):
+        plt.plot(tsne[i, 0], tsne[i, 1], '.', label=i, color=colors[i])
+        plt.text(tsne[i, 0], tsne[i, 1], str(i))
+    # plt.scatter(tsne[:, 0], tsne[:, 1], label='2-dim t-sne (pca)', s=4)
+
+    plt.title('Clustering: t-sne')
+    plt.xlabel('x1')
+    plt.ylabel('x2')
+    plt.legend()
+    plt.show()
+
 
 if __name__ == '__main__':
     choral = __get_bach_choral(0)
-    # __plot_pianoroll_for_range(choral, 0, 17)
     measures = __prepare_data(choral)
+    # __plot_pianoroll_for_range(choral, 0, len(measures))
 
     vectors = []
 
     for measure in measures:
-        pd = __create_filtration()
-        pd_components = pd[0]  # only use first dimension (i.e. components) to detect pattern classes (other dimensions add data noise for that downstream task)
-        pd_filtered = __preprocess_pd_for_vectorization()
-        vectors.append(pervect.PersistenceVectorizer(n_components=2).fit_transform(pd_filtered))
+        pd = __create_filtration(measure)
+        pd_filtered = __preprocess_pd_for_vectorization(pd)
+        pds_filtered.append(pd_filtered)
 
-    __cluster_euclidean_vectors()
+    vectors = __vectorize(pds_filtered)
+    __plot_vectorization_output(vectors)
+    labels = __cluster_euclidean_vectors(vectors)
 
-    print(vectors)
+    print(labels)
