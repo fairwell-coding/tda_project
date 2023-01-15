@@ -8,6 +8,8 @@ from sklearn.manifold import TSNE
 
 from ripser import Rips
 
+RANDOM_STATE = 42
+
 
 def __get_bach_choral(index: int):
     chorales = corpus.search('bach')
@@ -87,50 +89,90 @@ def __vectorize(pds):
 def __cluster_euclidean_vectors(vectors):
     labels = {}
 
-    kmeans = KMeans(n_clusters=6)
-    kmeans.fit(vectors)
-    labels["kmeans"] = kmeans.labels_
-
-    agglo = AgglomerativeClustering(n_clusters=4)
-    agglo.fit(vectors)
-    labels["agglomeration"] = agglo.labels_
-
-    feature_agglo = FeatureAgglomeration(n_clusters=4)
-    feature_agglo.fit_transform(vectors)
-    labels["feature agglomeration"] = feature_agglo.labels_
-
-    db = DBSCAN(eps=0.8, min_samples=2)
-    db.fit(vectors)
-    labels["dbscan"] = db.labels_
-
-    birch = Birch()
-    birch.fit(vectors)
-    labels["birch"] = birch.labels_
-
-    mean_shift = MeanShift()
-    mean_shift.fit(vectors)
-    labels["mean_shift"] = mean_shift.labels_
+    __kmeans_clustering(labels, vectors)
+    __agglomerative_clustering(labels, vectors)
+    __feature_agglomerative_clustering(labels, vectors)
+    __dbscan_clustering(labels, vectors)
+    __birch_clustering(labels, vectors)
+    __mean_shift_clustering(labels, vectors)
 
     return labels
 
 
-def __plot_vectorization_output(vectors):
+def __mean_shift_clustering(labels, vectors):
+    mean_shift = MeanShift()
+    mean_shift.fit(vectors)
+    labels["mean_shift"] = mean_shift.labels_
+
+
+def __birch_clustering(labels, vectors):
+    birch = Birch()
+    birch.fit(vectors)
+    labels["birch"] = birch.labels_
+
+
+def __dbscan_clustering(labels, vectors):
+    db = DBSCAN(eps=0.8, min_samples=2)
+    db.fit(vectors)
+    labels["dbscan"] = db.labels_
+
+
+def __feature_agglomerative_clustering(labels, vectors):
+    feature_agglo = FeatureAgglomeration(n_clusters=2)
+    feature_agglo.fit_transform(vectors)
+    labels["feature agglomeration"] = feature_agglo.labels_
+
+
+def __agglomerative_clustering(labels, vectors):
+    agglo = AgglomerativeClustering(n_clusters=4)
+    agglo.fit(vectors)
+    labels["agglomeration"] = agglo.labels_
+
+
+def __kmeans_clustering(labels, vectors):
+    kmeans = KMeans(n_clusters=4, random_state=RANDOM_STATE).fit(vectors)
+    labels["kmeans"] = kmeans.labels_
+    kmeans.cluster_centers_
+
+    colors = ['red', 'blue', 'green', 'orange', 'purple', 'yellow', 'cyan', 'lightgreen', 'darkred']
+    num_points_in_clusters = []
+
+    for i in range(kmeans.n_clusters):  # show found clusters in different colors
+        mask = np.where(kmeans.labels_ == i, True, False)
+        num_points_in_clusters.append(np.count_nonzero(mask))
+        plt.scatter(vectors[mask, 0], vectors[mask, 1], label=f'cluster {i}', color=colors[i], s=4)
+        # plt.plot(kmeans.cluster_centers_[i], marker='x', color='black')
+
+    for i in range(len(vectors)):  # add musical measure numbers
+        plt.text(vectors[i, 0], vectors[i, 1], str(i))
+
+    plt.title(f'Kmeans++ n_clusters = {kmeans.n_clusters}: t-sne for 2d visualization')
+    plt.xlabel('x1')
+    plt.ylabel('x2')
+    plt.legend()
+    plt.show()
+
+
+def __plot_vectorization_output(vectors_2d):
     colors = ['red', 'blue', 'green', 'orange', 'purple', 'yellow', 'cyan', 'lightgreen', 'darkred',
               'pink', 'salmon', 'darkgrey', 'paleturquoise', 'cornflowerblue', 'fuchsia', 'midnightblue', 'olive', 'dodgerblue']
 
-    tsne = TSNE(perplexity=3).fit_transform(vectors)
-    cm = plt.cm.get_cmap(lut=len(tsne))
+    cm = plt.cm.get_cmap(lut=len(vectors_2d))
 
-    for i in range(len(tsne)):
-        plt.plot(tsne[i, 0], tsne[i, 1], '.', label=i, color=colors[i])
-        plt.text(tsne[i, 0], tsne[i, 1], str(i))
+    for i in range(len(vectors_2d)):
+        plt.plot(vectors_2d[i, 0], vectors_2d[i, 1], '.', label=i, color=colors[i])
+        plt.text(vectors_2d[i, 0], vectors_2d[i, 1], str(i))
     # plt.scatter(tsne[:, 0], tsne[:, 1], label='2-dim t-sne (pca)', s=4)
 
     plt.title('Clustering: t-sne')
     plt.xlabel('x1')
     plt.ylabel('x2')
-    plt.legend()
+    # plt.legend()
     plt.show()
+
+
+def __convert_euclidean_vectors_to_2d(vectors):
+    return TSNE(perplexity=3).fit_transform(vectors)
 
 
 if __name__ == '__main__':
@@ -139,14 +181,14 @@ if __name__ == '__main__':
     # __plot_pianoroll_for_range(choral, 0, len(measures))
 
     pds_filtered = []
-
     for measure in measures:
         pd = __create_filtration(measure)
         pd_filtered = __preprocess_pd_for_vectorization(pd)
         pds_filtered.append(pd_filtered)
 
     vectors = __vectorize(pds_filtered)
-    __plot_vectorization_output(vectors)
-    labels = __cluster_euclidean_vectors(vectors)
+    vectors_2d = __convert_euclidean_vectors_to_2d(vectors)
+    __plot_vectorization_output(vectors_2d)
+    labels = __cluster_euclidean_vectors(vectors_2d)
 
     print(labels)
