@@ -1,5 +1,8 @@
 from music21 import corpus
-
+import numpy as np
+import matplotlib.pyplot as plt
+from ripser import *
+import pervect
 
 def __get_bach_choral(index: int):
     chorales = corpus.search('bach')
@@ -30,12 +33,16 @@ if __name__ == '__main__':
     data = __prepare_data()
 
     rips = Rips()
-    pd = rips.fit_transform(data[1])
-    rips.plot(pd)
-    plt.show()
+    pd = rips.fit_transform(data[2])
+    # rips.plot(pd)
+    # plt.show()
 
-    pd = [np.nan_to_num(pd[0]), np.nan_to_num(pd[1])]
-    pd[0][0, 1] = 10000
-    vectors = pervect.PersistenceVectorizer().fit_transform(pd)
+    pd_filtered = []
+    for pd_d in pd:
+        if pd_d.shape[0] != 0:
+            pd_d[pd_d == np.Inf] = np.max(pd_d[pd_d != np.Inf]) * 10
+            pd_filtered.append(pd_d)
+            
+    vectors = pervect.PersistenceVectorizer(n_components=3).fit_transform(pd_filtered)
 
-    print('x')
+    print(vectors)
