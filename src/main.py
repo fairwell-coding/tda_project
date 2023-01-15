@@ -1,23 +1,41 @@
 from music21 import corpus
 
-if __name__ == '__main__':
+
+def __get_bach_choral(index: int):
     chorales = corpus.search('bach')
-    choral = chorales[0]
-    score = choral.parse()
+    return chorales[index].parse()
 
-    # partStream = score.parts.stream()
 
-    # score.measures(1, 31).plot('pianoroll', figureSize=(10, 3))
+def __plot_pianoroll_for_range(start_idx: int, end_idx: int):
+    choral.measures(start_idx, end_idx).plot('pianoroll', figureSize=(10, 3))
 
+
+def __prepare_data():
     note_based_representation = []
-    for n in score.flat.notes:
-        #print(f"time: {float(n.duration.quarterLength):.2f}, note: {n.pitch.nameWithOctave}:{n.pitch.midi}, velocity: {n.pitch.frequency:.2f}, note-on: {float(n.offset):.2f}")
-        note_based_representation.append([float(n.duration.quarterLength), n.pitch.midi, float(n.offset)])
+    measure_idx = 0
 
-    data = np.array(note_based_representation)
-    # data = data[:, [True, True, False, True]]
+    while len(choral.measure(measure_idx).flat) != 0:
+        measure_representation = []
+        for n in choral.measure(measure_idx).flat.notes:
+            measure_representation.append([float(n.offset), float(n.duration.quarterLength), n.pitch.midi])  # note-on, time, note
+        note_based_representation.append(np.array(measure_representation))
+        measure_idx += 1
+
+    return np.array(note_based_representation)
+
+
+if __name__ == '__main__':
+    choral = __get_bach_choral(0)
+    # __plot_pianoroll_for_range(1, 31)
+    data = __prepare_data()
 
     rips = Rips()
-    diagrams = rips.fit_transform(data)
-    rips.plot(diagrams)
+    pd = rips.fit_transform(data[1])
+    rips.plot(pd)
     plt.show()
+
+    pd = [np.nan_to_num(pd[0]), np.nan_to_num(pd[1])]
+    pd[0][0, 1] = 10000
+    vectors = pervect.PersistenceVectorizer().fit_transform(pd)
+
+    print('x')
