@@ -1,8 +1,13 @@
+import matplotlib.pyplot as plt
+import pervect
 from music21 import corpus
 import numpy as np
-import matplotlib.pyplot as plt
-from ripser import *
-import pervect
+import persim
+from sklearn.cluster import FeatureAgglomeration, KMeans, MeanShift, Birch, DBSCAN, AgglomerativeClustering
+from sklearn.manifold import TSNE
+
+from ripser import Rips
+
 
 def __get_bach_choral(index: int):
     chorales = corpus.search('bach')
@@ -35,7 +40,7 @@ def __prepare_data(choral):
     return np.array(note_based_representation)
 
 
-def __create_filtration(plot_pd=False):
+def __create_filtration(measure, plot_pd=False):
     rips = Rips()
     pd = rips.fit_transform(measure)
 
@@ -58,12 +63,25 @@ def __preprocess_pd_for_vectorization(pd):
             pd_d[pd_d == np.Inf] = np.max(pd_d[pd_d != np.Inf]) * 10
             pd_filtered.append(pd_d)
 
-    if len(pd_filtered) == 1:  # allow vectorization via Gaussian-mixture model
-        pd_filtered = np.vstack((pd_filtered[0], pd_filtered[0]))
-        print('x')
+    #if len(pd_filtered) == 1:  # allow vectorization via Gaussian-mixture model
+    #    pd_filtered = np.vstack((pd_filtered[0], pd_filtered[0]))
+    #    print('x')
 
     return pd_filtered[0]  # only return dim=0 (i.e. components)
 
+
+def __vectorize(pds):
+    pimgr = persim.PersistenceImager(pixel_size=1)
+    pimgr.fit(pds, skew=True)
+    pimgr.birth_range = pimgr.birth_range[0], pimgr.birth_range[1] + 0.1
+    persistent_vectors = pimgr.transform(pds, skew=True)
+
+    prepared_vectors = []
+    for vector in persistent_vectors:
+        prepared_vectors.append(vector[0])
+    prepared_vectors = np.array(prepared_vectors)
+
+    return prepared_vectors
 
 
 def __cluster_euclidean_vectors(vectors):
@@ -120,7 +138,7 @@ if __name__ == '__main__':
     measures = __prepare_data(choral)
     # __plot_pianoroll_for_range(choral, 0, len(measures))
 
-    vectors = []
+    pds_filtered = []
 
     for measure in measures:
         pd = __create_filtration(measure)
