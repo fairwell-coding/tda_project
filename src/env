@@ -5,3 +5,4 @@ ripser=0.6
 dionysus=2.0
 scikit-learn=1.2
 pervect==0.0.2
+persim=0.3
