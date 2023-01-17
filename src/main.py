@@ -205,10 +205,11 @@ def __convert_euclidean_vectors_to_2d(vectors):
     return TSNE(perplexity=3).fit_transform(vectors)
     # return UMAP().fit_transform(vectors)
 
+
 if __name__ == '__main__':
     choral = __get_bach_choral(0)
     measures = __prepare_data(choral)
-    # __plot_pianoroll_for_range(choral, 0, len(measures))
+    __plot_pianoroll_for_range(choral, 0, len(measures))
 
     pds_filtered = []
     for measure in measures:
