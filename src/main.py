@@ -5,6 +5,7 @@ import numpy as np
 import persim
 from sklearn.cluster import FeatureAgglomeration, KMeans, MeanShift, Birch, DBSCAN, AgglomerativeClustering
 from sklearn.manifold import TSNE
+from umap import UMAP
 
 from ripser import Rips
 
@@ -92,6 +93,11 @@ def __vectorize_PerVect(pds):
     
 
 def __vectorize_PI(pds):
+    """ Vectorize using persistent images for input PD's.
+    :param pds: persistent diagrams from filtration
+    :return: Euclidean vectors
+    """
+
     pimgr = persim.PersistenceImager(pixel_size=1)
     pimgr.fit(pds, skew=True)
     pimgr.birth_range = pimgr.birth_range[0], pimgr.birth_range[1] + 0.1
@@ -197,7 +203,7 @@ def __plot_vectorization_output(vectors_2d):
 
 def __convert_euclidean_vectors_to_2d(vectors):
     return TSNE(perplexity=3).fit_transform(vectors)
-
+    # return UMAP().fit_transform(vectors)
 
 if __name__ == '__main__':
     choral = __get_bach_choral(0)
