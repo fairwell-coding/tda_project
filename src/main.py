@@ -162,12 +162,10 @@ def __plot_vectorization_output(vectors_2d):
     for i in range(len(vectors_2d)):
         plt.plot(vectors_2d[i, 0], vectors_2d[i, 1], '.', label=i, color=colors[i])
         plt.text(vectors_2d[i, 0], vectors_2d[i, 1], str(i))
-    # plt.scatter(tsne[:, 0], tsne[:, 1], label='2-dim t-sne (pca)', s=4)
 
-    plt.title('Clustering: t-sne')
+    plt.title('Dimensionality reduction: t-sne')
     plt.xlabel('x1')
     plt.ylabel('x2')
-    # plt.legend()
     plt.show()
 
 
