@@ -106,50 +106,57 @@ def __mean_shift_clustering(labels, vectors):
     mean_shift = MeanShift()
     mean_shift.fit(vectors)
     labels["mean_shift"] = mean_shift.labels_
+    __plot_clustering_result(mean_shift, "Blobs in smooth density (mean shift)", vectors)
 
 
 def __birch_clustering(labels, vectors):
     birch = Birch()
     birch.fit(vectors)
     labels["birch"] = birch.labels_
+    __plot_clustering_result(birch, "Tree-based (BIRCH)", vectors)
 
 
 def __dbscan_clustering(labels, vectors):
     db = DBSCAN(eps=0.8, min_samples=2)
     db.fit(vectors)
     labels["dbscan"] = db.labels_
+    __plot_clustering_result(db, "Density-based (DBSCAN)", vectors)
 
 
 def __feature_agglomerative_clustering(labels, vectors):
     feature_agglo = FeatureAgglomeration(n_clusters=2)
     feature_agglo.fit_transform(vectors)
     labels["feature agglomeration"] = feature_agglo.labels_
+    # __plot_clustering_result(feature_agglo, "Hierarchical (feature agglomerative)", vectors)
 
 
 def __agglomerative_clustering(labels, vectors):
     agglo = AgglomerativeClustering(n_clusters=4)
     agglo.fit(vectors)
     labels["agglomeration"] = agglo.labels_
+    __plot_clustering_result(agglo, "Hierarchical (agglomerative)", vectors)
 
 
 def __kmeans_clustering(labels, vectors):
     kmeans = KMeans(n_clusters=4, random_state=RANDOM_STATE).fit(vectors)
     labels["kmeans"] = kmeans.labels_
-    kmeans.cluster_centers_
+    __plot_clustering_result(kmeans, "Kmeans++", vectors)
 
+
+def __plot_clustering_result(clustering_algorithm, clustering_name, vectors, dim_reduction="t-sne"):
     colors = ['red', 'blue', 'green', 'orange', 'purple', 'yellow', 'cyan', 'lightgreen', 'darkred']
     num_points_in_clusters = []
 
-    for i in range(kmeans.n_clusters):  # show found clusters in different colors
-        mask = np.where(kmeans.labels_ == i, True, False)
+    for i in range(len(colors)):  # show found clusters in different colors
+        mask = np.where(clustering_algorithm.labels_ == i, True, False)
         num_points_in_clusters.append(np.count_nonzero(mask))
         plt.scatter(vectors[mask, 0], vectors[mask, 1], label=f'cluster {i}', color=colors[i], s=4)
-        # plt.plot(kmeans.cluster_centers_[i], marker='x', color='black')
 
     for i in range(len(vectors)):  # add musical measure numbers
         plt.text(vectors[i, 0], vectors[i, 1], str(i))
 
-    plt.title(f'Kmeans++ n_clusters = {kmeans.n_clusters}: t-sne for 2d visualization')
+    # plt.title(f'{clustering_name} n_clusters = {clustering_algorithm.n_clusters}: {dim_reduction} for 2d visualization')
+    plt.title(f'{clustering_name}: {dim_reduction} for 2d visualization')
     plt.xlabel('x1')
     plt.ylabel('x2')
     plt.legend()
