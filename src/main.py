@@ -53,8 +53,9 @@ def __create_filtration(measure, plot_pd=False):
     return pd
 
 
-def __preprocess_pd_for_vectorization(pd):
-    """ Take care of infinity values and musical measures which only contain a single played note (since some vectorization algorithms fail with a single data point as input).
+
+def __preprocess_pd_for_pervert(pd):
+    """ Pervert: Take care of infinity values and musical measures which only contain a single played note (since some vectorization algorithms fail with a single data point as input).
     :return: persistence diagram format which can be used as input for vectorization
     """
 
@@ -65,11 +66,26 @@ def __preprocess_pd_for_vectorization(pd):
             pd_d[pd_d == np.Inf] = np.max(pd_d[pd_d != np.Inf]) * 10
             pd_filtered.append(pd_d)
 
-    #if len(pd_filtered) == 1:  # allow vectorization via Gaussian-mixture model
-    #    pd_filtered = np.vstack((pd_filtered[0], pd_filtered[0]))
-    #    print('x')
+    if len(pd_filtered) == 1:  # allow vectorization via Gaussian-mixture model
+       pd_filtered = np.vstack((pd_filtered[0], pd_filtered[0]))
+       print('x')
 
     return pd_filtered[0]  # only return dim=0 (i.e. components)
+
+def __preprocess_pd_for_pi(pd):
+    """ Persistent images: Take care of infinity values and musical measures which only contain a single played note (since some vectorization algorithms fail with a single data point as input).
+    :return: persistence diagram format which can be used as input for vectorization
+    """
+
+    pd_filtered = []
+
+    for pd_d in pd:
+        if pd_d.shape[0] != 0:
+            pd_d[pd_d == np.Inf] = np.max(pd_d[pd_d != np.Inf]) * 10
+            pd_filtered.append(pd_d)
+
+    return pd_filtered[0]  # only return dim=0 (i.e. components)
+
 
 def __vectorize_PerVect(pds):
     return pervect.PersistenceVectorizer().fit_transform(pds)
@@ -106,21 +122,21 @@ def __mean_shift_clustering(labels, vectors):
     mean_shift = MeanShift()
     mean_shift.fit(vectors)
     labels["mean_shift"] = mean_shift.labels_
-    __plot_clustering_result(mean_shift, "Blobs in smooth density (mean shift)", vectors)
+    # __plot_clustering_result(mean_shift, "Blobs in smooth density (mean shift)", vectors)
 
 
 def __birch_clustering(labels, vectors):
     birch = Birch()
     birch.fit(vectors)
     labels["birch"] = birch.labels_
-    __plot_clustering_result(birch, "Tree-based (BIRCH)", vectors)
+    # __plot_clustering_result(birch, "Tree-based (BIRCH)", vectors)
 
 
 def __dbscan_clustering(labels, vectors):
     db = DBSCAN(eps=0.8, min_samples=2)
     db.fit(vectors)
     labels["dbscan"] = db.labels_
-    __plot_clustering_result(db, "Density-based (DBSCAN)", vectors)
+    # __plot_clustering_result(db, "Density-based (DBSCAN)", vectors)
 
 
 def __feature_agglomerative_clustering(labels, vectors):
@@ -134,7 +150,7 @@ def __agglomerative_clustering(labels, vectors):
     agglo = AgglomerativeClustering(n_clusters=4)
     agglo.fit(vectors)
     labels["agglomeration"] = agglo.labels_
-    __plot_clustering_result(agglo, "Hierarchical (agglomerative)", vectors)
+    # __plot_clustering_result(agglo, "Hierarchical (agglomerative)", vectors)
 
 
 def __kmeans_clustering(labels, vectors):
@@ -191,10 +207,12 @@ if __name__ == '__main__':
     pds_filtered = []
     for measure in measures:
         pd = __create_filtration(measure)
-        pd_filtered = __preprocess_pd_for_vectorization(pd)
+        pd_filtered = __preprocess_pd_for_pi(pd)
+        # pd_filtered = __preprocess_pd_for_pervert(pd)
         pds_filtered.append(pd_filtered)
 
     vectors = __vectorize_PI(pds_filtered)
+    # vectors = __vectorize_PerVect(pds_filtered)
     vectors_2d = __convert_euclidean_vectors_to_2d(vectors)
     __plot_vectorization_output(vectors_2d)
     labels = __cluster_euclidean_vectors(vectors_2d)
