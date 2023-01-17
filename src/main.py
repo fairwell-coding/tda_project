@@ -71,8 +71,11 @@ def __preprocess_pd_for_vectorization(pd):
 
     return pd_filtered[0]  # only return dim=0 (i.e. components)
 
+def __vectorize_PerVect(pds):
+    return pervect.PersistenceVectorizer().fit_transform(pds)
+    
 
-def __vectorize(pds):
+def __vectorize_PI(pds):
     pimgr = persim.PersistenceImager(pixel_size=1)
     pimgr.fit(pds, skew=True)
     pimgr.birth_range = pimgr.birth_range[0], pimgr.birth_range[1] + 0.1
@@ -184,7 +187,7 @@ if __name__ == '__main__':
         pd_filtered = __preprocess_pd_for_vectorization(pd)
         pds_filtered.append(pd_filtered)
 
-    vectors = __vectorize(pds_filtered)
+    vectors = __vectorize_PI(pds_filtered)
     vectors_2d = __convert_euclidean_vectors_to_2d(vectors)
     __plot_vectorization_output(vectors_2d)
     labels = __cluster_euclidean_vectors(vectors_2d)
